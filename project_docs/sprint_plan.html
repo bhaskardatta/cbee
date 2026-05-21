@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cbee Phase 2 — Sprint Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ---------- design tokens ---------- */
+  :root {
+    --teal:        #26A69A;
+    --teal-deep:   #006D68;
+    --teal-soft:   #B2DFDB;
+    --teal-ghost:  #E0F2F1;
+    --cream:       #FAF7F0;
+    --cream-soft:  #F4EFE0;
+    --paper:       #FFFFFF;
+    --ink:         #1A1A1A;
+    --ink-soft:    #4B5563;
+    --ink-faint:   #9CA3AF;
+    --rule:        #E5E0CF;
+    --rule-strong: #C7BFA8;
+    --risk:        #B91C1C;
+    --risk-soft:   #FEE2E2;
+    --done:        #047857;
+    --done-soft:   #D1FAE5;
+    --demo:        #B45309;
+    --demo-soft:   #FEF3C7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 15px;
+    background-image:
+      radial-gradient(circle at 1px 1px, var(--rule) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  /* ---------- layout shell ---------- */
+  .sheet {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 64px 48px 96px;
+    background: var(--paper);
+    border-left: 1px solid var(--rule-strong);
+    border-right: 1px solid var(--rule-strong);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    border-bottom: 3px double var(--ink);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: end;
+  }
+
+  .masthead-titleblock { }
+
+  .masthead-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .masthead-eyebrow::before {
+    content: "";
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--ink-soft);
+  }
+
+  .masthead h1 {
+    font-family: "Fraunces", serif;
+    font-weight: 900;
+    font-variation-settings: "opsz" 100;
+    font-size: clamp(48px, 6vw, 88px);
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    margin-bottom: 12px;
+  }
+  .masthead h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--teal-deep);
+  }
+
+  .masthead-deck {
+    font-family: "Fraunces", serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink-soft);
+    max-width: 540px;
+  }
+
+  .masthead-meta {
+    text-align: right;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--ink-soft);
+  }
+  .masthead-meta b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .masthead-meta hr {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 8px 0;
+  }
+
+  /* ---------- key + legend ---------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+    padding: 16px 24px;
+    background: var(--cream-soft);
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    margin-bottom: 56px;
+    font-size: 12px;
+    align-items: center;
+  }
+  .legend-title {
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    margin-right: 8px;
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .swatch {
+    width: 14px; height: 14px;
+    border-radius: 2px;
+    border: 1px solid var(--rule-strong);
+  }
+  .swatch.build { background: var(--teal-ghost); }
+  .swatch.demo  { background: var(--demo-soft); }
+  .swatch.risk  { background: var(--risk-soft); }
+  .swatch.qa    { background: var(--cream-soft); }
+  .swatch.ship  { background: var(--done-soft); }
+
+  /* ---------- week sections ---------- */
+  .week {
+    margin-bottom: 72px;
+    position: relative;
+  }
+
+  .week-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 24px;
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+
+  .week-number {
+    font-family: "Fraunces", serif;
+    font-weight: 900;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(64px, 7vw, 96px);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    color: var(--teal-deep);
+  }
+
+  .week-title {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+
+  .week-tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 6px 12px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  .week-summary {
+    font-family: "Fraunces", serif;
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 720px;
+    padding-left: 4px;
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+
+  /* ---------- day grid ---------- */
+  .days {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--rule-strong);
+    border: 1px solid var(--rule-strong);
+  }
+
+  .day {
+    background: var(--paper);
+    padding: 18px 16px 18px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+  }
+  .day:hover { background: var(--cream); }
+  .day.expanded { background: var(--cream); }
+
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .day-num {
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .day-dot {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .day-weekday {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .day-title {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+
+  /* day type indicators */
+  .day-type {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 4px;
+  }
+  .day.is-build .day-type { background: var(--teal); }
+  .day.is-demo  .day-type { background: var(--demo); }
+  .day.is-risk  .day-type { background: var(--risk); }
+  .day.is-qa    .day-type { background: var(--ink-faint); }
+  .day.is-ship  .day-type { background: var(--done); }
+
+  .day-tasks {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+  .day-tasks li {
+    padding-left: 14px;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .day-tasks li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 1px;
+    background: var(--teal);
+  }
+
+  .day-extra {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    margin-top: 0;
+  }
+  .day.expanded .day-extra {
+    max-height: 480px;
+    margin-top: 12px;
+  }
+  .day-extra-section {
+    padding-top: 12px;
+    margin-top: 12px;
+    border-top: 1px dashed var(--rule-strong);
+  }
+  .day-extra-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .day-extra-text {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .day-extra-text code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    background: var(--cream-soft);
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+
+  .day-pill {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .day-pill.build { background: var(--teal-ghost); color: var(--teal-deep); }
+  .day-pill.demo  { background: var(--demo-soft); color: var(--demo); }
+  .day-pill.risk  { background: var(--risk-soft); color: var(--risk); }
+  .day-pill.qa    { background: var(--cream-soft); color: var(--ink); }
+  .day-pill.ship  { background: var(--done-soft); color: var(--done); }
+
+  /* ---------- dependency strip ---------- */
+  .dep-strip {
+    margin: 56px 0 56px;
+    padding: 32px;
+    background: linear-gradient(135deg, var(--teal-ghost) 0%, var(--cream) 100%);
+    border: 1px solid var(--teal-soft);
+    border-radius: 2px;
+    position: relative;
+  }
+  .dep-strip-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--teal-deep);
+    margin-bottom: 8px;
+  }
+  .dep-strip h2 {
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .dep-flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    align-items: stretch;
+  }
+  .dep-node {
+    padding: 14px 12px;
+    background: var(--paper);
+    border: 1px solid var(--teal-soft);
+    border-radius: 2px;
+    position: relative;
+    font-size: 12px;
+  }
+  .dep-node:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--teal);
+    font-size: 16px;
+    font-weight: 700;
+    z-index: 1;
+  }
+  .dep-node-day {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--teal-deep);
+    margin-bottom: 4px;
+  }
+  .dep-node-label {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  /* ---------- risk callout ---------- */
+  .risk-block {
+    margin: 48px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--rule-strong);
+  }
+  .risk-block > div {
+    padding: 28px;
+    background: var(--paper);
+  }
+  .risk-block > div:first-child {
+    border-right: 1px solid var(--rule-strong);
+    background: linear-gradient(180deg, var(--risk-soft) 0%, var(--paper) 100%);
+  }
+  .risk-block h3 {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--risk);
+    margin-bottom: 12px;
+  }
+  .risk-block > div:last-child h3 {
+    color: var(--ink-soft);
+  }
+  .risk-block ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .risk-block li {
+    font-family: "Fraunces", serif;
+    font-size: 16px;
+    line-height: 1.5;
+    padding-left: 22px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .risk-block > div:first-child li::before {
+    content: "!";
+    position: absolute;
+    left: 0; top: 0;
+    color: var(--risk);
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .risk-block > div:last-child li::before {
+    content: "→";
+    position: absolute;
+    left: 0; top: 0;
+    color: var(--teal-deep);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+  }
+
+  /* ---------- footer ---------- */
+  .footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 3px double var(--ink);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 40px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.8;
+  }
+  .footer h4 {
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  .footer b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .sheet { padding: 32px 24px; }
+    .days { grid-template-columns: repeat(2, 1fr); }
+    .dep-flow { grid-template-columns: 1fr; }
+    .dep-node:not(:last-child)::after {
+      content: "↓";
+      right: 50%; top: auto; bottom: -16px;
+      transform: translateX(50%);
+    }
+    .risk-block { grid-template-columns: 1fr; }
+    .risk-block > div:first-child { border-right: none; border-bottom: 1px solid var(--rule-strong); }
+    .footer { grid-template-columns: 1fr; gap: 24px; }
+    .masthead { grid-template-columns: 1fr; }
+    .masthead-meta { text-align: left; }
+  }
+
+  /* ---------- print ---------- */
+  @media print {
+    body { background: white; }
+    .sheet { box-shadow: none; max-width: 100%; padding: 24px; border: none; }
+    body { background-image: none; }
+    .day { break-inside: avoid; }
+    .day.expanded .day-extra { max-height: none; }
+    .day-extra { max-height: none; margin-top: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+
+    <!-- ============ MASTHEAD ============ -->
+    <header class="masthead">
+      <div class="masthead-titleblock">
+        <div class="masthead-eyebrow">cbee × Spurt Studios · Phase 2 · Sprint Plan</div>
+        <h1>Four weeks,<br><em>thirty boxes</em></h1>
+        <p class="masthead-deck">
+          The day-by-day plan for shipping native camera, the Reels feed, the iOS build,
+          and the Cloudflare R2 media architecture — in twenty working days.
+        </p>
+      </div>
+      <div class="masthead-meta">
+        <b>ENGAGEMENT</b><br>
+        ₹60,000 fixed<br>
+        40 / 30 / 30 milestones
+        <hr>
+        <b>LEAD</b><br>
+        Bhaskar Datta P<br>
+        Spurt Studios, Bangalore
+        <hr>
+        <b>CLIENT</b><br>
+        Swaroop B S<br>
+        cbee · Bangalore
+      </div>
+    </header>
+
+    <!-- ============ LEGEND ============ -->
+    <div class="legend">
+      <span class="legend-title">Day type</span>
+      <span class="legend-item"><span class="swatch build"></span>Build / write code</span>
+      <span class="legend-item"><span class="swatch demo"></span>Friday checkpoint &amp; demo video</span>
+      <span class="legend-item"><span class="swatch risk"></span>Risk zone — depends on external</span>
+      <span class="legend-item"><span class="swatch qa"></span>QA / polish</span>
+      <span class="legend-item"><span class="swatch ship"></span>Ship / handoff</span>
+    </div>
+
+    <!-- ============ WEEK 1 ============ -->
+    <section class="week">
+      <div class="week-header">
+        <div class="week-number">01</div>
+        <h2 class="week-title">Foundation:<br>Capacitor 8, iOS, schema</h2>
+        <div class="week-tag">Days 1–5</div>
+      </div>
+      <p class="week-summary">
+        The week of one-time decisions. Everything that gets baked in now we live with for the rest of the sprint.
+        Upgrade the runtime, rename the bundle, scaffold iOS, push the schema. Friday: first demo to Swaroop.
+      </p>
+
+      <div class="days">
+
+        <div class="day is-risk" data-day="1">
+          <div class="day-type"></div>
+          <div class="day-head">
+            <div class="day-num">01</div>
+            <div class="day-dot">M / wk 1</div>
+          </div>
+          <div class="day-weekday">Monday</div>
+          <span class="day-pill risk">Foundation</span>
+          <h3 class="day-title">Cap 8 upgrade + bundle ID</h3>
+          <ul class="day-tasks">
+            <li>Bump <code>@capacitor/*</code> to v8</li>
+            <li>Rename <code>app.netlify.cbee</code> → <code>app.cbee.in</code></li>
+            <li>Remove <code>lovable-tagger</code></li>
+            <li>Disconnect Lovable per ADR-011</li>
+          </ul>
+          <div class="day-extra">
+            <div class="day-extra-section">
+              <div class="day-extra-label">Why this day matters</div>
+              <div class="day-extra-text">
+                The bundle ID rename has to happen BEFORE <code>npx cap add ios</code> writes the old name into 50 files. Cap 8 unlocks gridlines API in capgo plugin.
+              </div>
+            </div>
+            <div class="day-extra-section">
+              <div class="day-extra-label">Could fail because</div>
+              <div class="day-extra-text">
+                Cap 8 needs Node 22+. Swift Package Manager default if you forget <code>--packagemanager Cocoapods</code> flag.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="day is-risk" data-day="2">
+          <div class="day-type"></div>
+          <div class="day-head">
+            <div class="day-num">02</div>
+            <div class="day-dot">T / wk 1</div>
+          </div>
+          <div class="day-weekday">Tuesday</div>
+          <span class="day-pill risk">Spike</span>
+          <h3 class="day-title">iOS scaffolding + camera plugin spike</h3>
+          <ul class="day-tasks">
+            <li><code>npx cap add ios --packagemanager Cocoapods</code></li>
+            <li>Install <code>@capgo/camera-preview@^8</code></li>
+            <li>Add Info.plist usage strings</li>
+            <li>Test camera open on a real iPhone</li>
+          </ul>
+          <div class="day-extra">
+            <div class="day-extra-section">
+              <div class="day-extra-label">Decision point</div>
+              <div class="day-extra-text">
+                If 30MB video upload via Supabase JS client OOMs on Redmi 12 → add <code>@capgo/capacitor-uploader</code> (ADR-016). Else stay with current path.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="day is-build" data-day="3">
+          <div class="day-type"></div>
+          <div class="day-head">
+            <div class="day-num">03</div>
+            <div class="day-dot">W / wk 1</div>
+          </div>
+          <div class="day-weekday">Wednesday</div>
+          <span class="day-pill build">Schema</span>
+          <h3 class="day-title">DB migration (no Supabase Storage)</h3>
+          <ul class="day-tasks">
+            <li>Write the Phase 2 migration</li>
+            <li>The CRITICAL backfill SQL</li>
+            <li>Trigger keeping <code>type</code> ↔ <code>media_kind</code></li>
+            <li>reel_views + reports tables + RLS</li>
+          </ul>
+          <div class="day-extra">
+            <div class="day-extra-section">
+              <div class="day-extra-label">Verify before shipping</div>
+              <div class="day-extra-text">
+                <code>SELECT COUNT(*)</code> on <code>type='video'</code> must match <code>media_kind='video'</code>. If not, backfill broken.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="day is-build" data-day="4">
+          <div class="day-type"></div>
+          <div class="day-head">
+            <div class="day-num">04</div>
+            <div class="day-dot">Th / wk 1</div>
+          </div>
+          <div class="day-weekday">Thursday</div>
+          <span class="day-pill build">Hooks + R2</span>
+          <h3 class="day-title">useNativeCamera + R2 + edge fn</h3>
+          <ul class="day-tasks">
+            <li><code>useNativeCamera.ts</code> with <code>videoBitrate: 3500000</code></li>
+            <li><code>get-upload-url</code> edge function with R2 creds</li>
+            <li><code>useMediaUpload</code> rewritten for signed PUT to R2</li>
+            <li><code>src/lib/media.ts</code> with duration / aspect helpers</li>
+          </ul>
+          <div class="day-extra">
+            <div class="day-extra-section">
+              <div class="day-extra-label">Why R2 matters today</div>
+              <div class="day-extra-text">
+                Per ADR-017, all media goes to Cloudflare R2 from Day 1 — zero egress fees forever. Skipping this means a forced migration at 1k DAU when it's most painful.
+              </div>
+            </div>
+            <div class="day-extra-section">
+              <div class="day-extra-label">Prerequisite from Swaroop</div>
+              <div class="day-extra-text">
+                R2 bucket + API token must be set up by Day 4. He has <code>cloudflare_setup.md</code> with the walkthrough — 30 min of his time.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="day is-demo" data-day="5">
+          <div class="day-type"></div>
+          <div class="day-head">
+            <div class="day-num">05</div>
+            <div class="day-dot">F / wk 1</div>
+          </div>
+          <div class="day-weekday">Friday</div>
+          <span class="day-pill demo">Demo #1</span>
+          <h3 class="day-title">First checkpoint with Swaroop</h3>
+          <ul class="day-tasks">
+            <li>Record 3-min Loom: Cap 8 + iOS + schema</li>
+            <li>Send Swaroop with summary</li>
+            <li>40% milestone invoice — ₹24,000</li>
+            <li>Open Week 2 PR branch</li>
+          </ul>
+          <div class="day-extra">
+            <div class="day-extra-section">
+              <div class="day-extra-label">Demo script</div>
+              <div class="day-extra-text">
+                Show iOS sim launch, Cap 8 in package.json, fresh migration applied, camera preview opens (preview only, no UI). 3 min max.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ DEPENDENCY STRIP ============ -->
+    <div class="dep-strip">
+      <div class="dep-strip-eyebrow">Critical path · Week 1</div>
+      <h2>Each day unlocks the next</h2>
+      <div class="dep-flow">
+        <div class="dep-node">
+          <div class="dep-node-day">Day 1</div>
+          <div class="dep-node-label">Cap 8 + bundle ID</div>
+        </div>
+        <div class="dep-node">
+          <div class="dep-node-day">Day 2</div>
+          <div class="dep-node-label">iOS scaffolded</div>
+        </div>
+        <div class="dep-node">
+          <div class="dep-node-day">Day 3</div>
+          <div class="dep-node-label">Schema live</div>
+        </div>
+        <div class="dep-node">
+          <div class="dep-node-day">Day 4</div>
+          <div class="dep-node-label">Camera hook wired</div>
+        </div>
+        <div class="dep-node">
+          <div class="dep-node-day">Day 5</div>
+          <div class="dep-node-label">Demo + invoice</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ WEEK 2 ============ -->
+    <section class="week">
+      <div class="week-header">
+        <div class="week-number">02</div>
+        <h2 class="week-title">Camera:<br>the in-app capture flow</h2>
+        <div class="week-tag">Days 6–10</div>
+      </div>
+      <p class="week-summary">
+        The visible feature. Build the full-screen camera sheet, gridlines, shutter button, capture pipeline, video duration cap.
+        End of week: capture a video on your phone, post it, see it in the feed.
+      </p>
+
+      <div class="days">
+        <div class="day is-build" data-day="6">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">06</div><div class="day-dot">M / wk 2</div></div>
+          <div class="day-weekday">Monday</div>
+          <span class="day-pill build">Sheet</span>
+          <h3 class="day-title">NativeCameraSheet shell</h3>
+          <ul class="day-tasks">
+            <li>Radix Dialog full-screen mount</li>
+            <li>Transparent body class</li>
+            <li>Open / close lifecycle</li>
+            <li>Permission prompt + denial flow</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Gotcha to watch</div><div class="day-extra-text">G-3: tear down any playing &lt;video&gt; before opening sheet, else iOS audio session collides.</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="7">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">07</div><div class="day-dot">T / wk 2</div></div>
+          <div class="day-weekday">Tuesday</div>
+          <span class="day-pill build">Overlay</span>
+          <h3 class="day-title">GridlinesOverlay + frame guides</h3>
+          <ul class="day-tasks">
+            <li>SVG overlay component</li>
+            <li>5 modes: off / 3x3 / 1:1 / 4:5 / 9:16</li>
+            <li>Inscribed-rect math for frame guides</li>
+            <li>Persist last mode via Preferences</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Detail that matters</div><div class="day-extra-text">Thin white strokes (1px) with subtle drop-shadow so they're visible against ANY scene.</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="8">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">08</div><div class="day-dot">W / wk 2</div></div>
+          <div class="day-weekday">Wednesday</div>
+          <span class="day-pill build">Controls</span>
+          <h3 class="day-title">ShutterButton + tap-to-focus + zoom</h3>
+          <ul class="day-tasks">
+            <li>Tap = photo, hold = video</li>
+            <li>Animated progress ring (Framer)</li>
+            <li>Tap-to-focus reticle</li>
+            <li>Pinch-to-zoom gesture</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Auto-stop at 60s</div><div class="day-extra-text">Hard cap inside the shutter button; double cap in the post submit validation.</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="9">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">09</div><div class="day-dot">Th / wk 2</div></div>
+          <div class="day-weekday">Thursday</div>
+          <span class="day-pill build">Wiring</span>
+          <h3 class="day-title">UploadPage integration + thumbnails</h3>
+          <ul class="day-tasks">
+            <li>Camera FAB on UploadPage</li>
+            <li>Capture → preview → submit</li>
+            <li>Video thumbnail generation</li>
+            <li>Gallery picker 60s cap</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">End-of-day test</div><div class="day-extra-text">Tap camera FAB, record 10s, post → row in DB with all new fields populated.</div></div></div>
+        </div>
+
+        <div class="day is-demo" data-day="10">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">10</div><div class="day-dot">F / wk 2</div></div>
+          <div class="day-weekday">Friday</div>
+          <span class="day-pill demo">Demo #2</span>
+          <h3 class="day-title">Camera demo + bottom nav</h3>
+          <ul class="day-tasks">
+            <li>Layout.tsx reshuffle: 5 tabs + FAB</li>
+            <li>Record 3-min Loom: full camera flow</li>
+            <li>Quick QA on Pixel 7</li>
+            <li>Send Swaroop</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Demo script</div><div class="day-extra-text">Open app → tap FAB → take photo + 15s video → post → see in feed. Cycle through gridline modes mid-record.</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WEEK 3 ============ -->
+    <section class="week">
+      <div class="week-header">
+        <div class="week-number">03</div>
+        <h2 class="week-title">Reels:<br>vertical feed + interactions</h2>
+        <div class="week-tag">Days 11–15</div>
+      </div>
+      <p class="week-summary">
+        The flagship. Embla in vertical mode, three-slide mount window, autoplay-on-snap, double-tap likes, view tracking.
+        Network-aware preload. Memory plateaus on Redmi 12. Friday: end-to-end Reels demo.
+      </p>
+
+      <div class="days">
+        <div class="day is-build" data-day="11">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">11</div><div class="day-dot">M / wk 3</div></div>
+          <div class="day-weekday">Monday</div>
+          <span class="day-pill build">Data</span>
+          <h3 class="day-title">useReels + cursor pagination</h3>
+          <ul class="day-tasks">
+            <li><code>useInfiniteQuery</code> setup</li>
+            <li>Keyset on <code>(created_at, id)</code></li>
+            <li>Page size 8, prefetch trigger</li>
+            <li><code>useReelView</code> with 1.5s dwell</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">DB test</div><div class="day-extra-text">Verify trigger increments <code>posts.view_count</code> on first dwell. Re-dwell does NOT double-count (unique constraint).</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="12">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">12</div><div class="day-dot">T / wk 3</div></div>
+          <div class="day-weekday">Tuesday</div>
+          <span class="day-pill build">Slider</span>
+          <h3 class="day-title">ReelsFeed + mount window</h3>
+          <ul class="day-tasks">
+            <li>Embla vertical config</li>
+            <li>3-slide mount window (prev / current / next)</li>
+            <li>Snap → setActiveIndex</li>
+            <li>Pause prev, play current</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Memory math</div><div class="day-extra-text">50 mounted &lt;video&gt; = OOM on Redmi 12. 3 mounted = flat memory. Mount window is the single most important perf knob.</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="13">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">13</div><div class="day-dot">W / wk 3</div></div>
+          <div class="day-weekday">Wednesday</div>
+          <span class="day-pill build">Slide</span>
+          <h3 class="day-title">ReelSlide + gestures</h3>
+          <ul class="day-tasks">
+            <li>Single tap = mute toggle</li>
+            <li>Long-press = pause / release resume</li>
+            <li>Double-tap = like + heart pop</li>
+            <li>Network-aware preload</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Disambiguation</div><div class="day-extra-text">Single vs double tap: 280ms window. Long-press: 250ms threshold. Test order: long-press first (interrupts), then tap.</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="14">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">14</div><div class="day-dot">Th / wk 3</div></div>
+          <div class="day-weekday">Thursday</div>
+          <span class="day-pill build">Overlay</span>
+          <h3 class="day-title">ReelOverlay + ReportButton</h3>
+          <ul class="day-tasks">
+            <li>Avatar + caption + actions rail</li>
+            <li>Progress bar at top of slide</li>
+            <li>Three-dot menu → ReportDialog</li>
+            <li>Comments drawer</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Moderation MVP</div><div class="day-extra-text">7 canonical reasons, unique constraint on (reporter, post). Admin triages via SQL in Supabase Studio.</div></div></div>
+        </div>
+
+        <div class="day is-demo" data-day="15">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">15</div><div class="day-dot">F / wk 3</div></div>
+          <div class="day-weekday">Friday</div>
+          <span class="day-pill demo">Demo #3</span>
+          <h3 class="day-title">Reels end-to-end on Pixel 7</h3>
+          <ul class="day-tasks">
+            <li>Empty-state Lottie</li>
+            <li>FPS profiling on real device</li>
+            <li>Record 3-min Loom: full Reels flow</li>
+            <li>30% milestone invoice — ₹18,000</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Demo script</div><div class="day-extra-text">Open /reels → swipe through 5 reels → tap to unmute → double-tap like → long-press pause → report flow. Show FPS counter at 60.</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RISK BLOCK ============ -->
+    <div class="risk-block">
+      <div>
+        <h3>Risk zones — what could blow Week 3</h3>
+        <ul>
+          <li>OOM on Redmi 12 from too many mounted videos. Mitigation: mount window MUST work; profile by Day 12.</li>
+          <li>iOS audio session collision after Reels visit, breaking subsequent camera record. Mitigation: G-3.</li>
+          <li>Supabase egress spike if testers run reels in a loop. Mitigation: 60s cap + thumbnail preview.</li>
+          <li>TanStack Query cache stale-data with new columns. Mitigation: bump <code>buster</code> to v2 in App.tsx.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Mitigation already locked in</h3>
+        <ul>
+          <li>Three-slide mount window — implemented Day 12.</li>
+          <li>JS tear-down of all videos before opening camera — implemented Day 6.</li>
+          <li>Hard 60s cap on video duration both at camera and at gallery picker.</li>
+          <li>Cache buster bumped in Day 1 PR.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ============ WEEK 4 ============ -->
+    <section class="week">
+      <div class="week-header">
+        <div class="week-number">04</div>
+        <h2 class="week-title">Polish &amp; handoff:<br>QA, sign, transfer</h2>
+        <div class="week-tag">Days 16–20</div>
+      </div>
+      <p class="week-summary">
+        The non-build week. Full QA matrix on 4 devices, signed AAB, Xcode archive, store-listing kit, training videos,
+        Welcome Pack delivery, secure keystore handoff, final invoice.
+      </p>
+
+      <div class="days">
+        <div class="day is-qa" data-day="16">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">16</div><div class="day-dot">M / wk 4</div></div>
+          <div class="day-weekday">Monday</div>
+          <span class="day-pill qa">QA</span>
+          <h3 class="day-title">Device matrix sweep</h3>
+          <ul class="day-tasks">
+            <li>Pixel 7 — full criteria</li>
+            <li>Samsung A55 — full criteria</li>
+            <li>Redmi 12 — perf criteria</li>
+            <li>Triage bugs into Day 17–18</li>
+          </ul>
+        </div>
+
+        <div class="day is-build" data-day="17">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">17</div><div class="day-dot">T / wk 4</div></div>
+          <div class="day-weekday">Tuesday</div>
+          <span class="day-pill build">Fixes</span>
+          <h3 class="day-title">Bug fixes + iPhone QA</h3>
+          <ul class="day-tasks">
+            <li>Fix bugs from Day 16</li>
+            <li>Run full criteria on iPhone</li>
+            <li>iOS-specific edge cases</li>
+            <li>Lock all Phase 2 PRs</li>
+          </ul>
+        </div>
+
+        <div class="day is-build" data-day="18">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">18</div><div class="day-dot">W / wk 4</div></div>
+          <div class="day-weekday">Wednesday</div>
+          <span class="day-pill build">Sign</span>
+          <h3 class="day-title">Generate keystore + signed builds</h3>
+          <ul class="day-tasks">
+            <li>Generate <code>cbee-release.jks</code></li>
+            <li>Signed AAB via Gradle</li>
+            <li>Verify with bundletool</li>
+            <li>Xcode archive + .ipa export</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">Critical</div><div class="day-extra-text">Keystore must be backed up to 3 locations before EOD. This is the single irreplaceable artifact of the engagement.</div></div></div>
+        </div>
+
+        <div class="day is-build" data-day="19">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">19</div><div class="day-dot">Th / wk 4</div></div>
+          <div class="day-weekday">Thursday</div>
+          <span class="day-pill build">Package</span>
+          <h3 class="day-title">Training videos + store kit</h3>
+          <ul class="day-tasks">
+            <li>Record cbee_user_tour.mp4 (3 min)</li>
+            <li>Record cbee_admin_moderation.mp4</li>
+            <li>Screenshots for both stores</li>
+            <li>Finalize Welcome Pack PDFs</li>
+          </ul>
+        </div>
+
+        <div class="day is-ship" data-day="20">
+          <div class="day-type"></div>
+          <div class="day-head"><div class="day-num">20</div><div class="day-dot">F / wk 4</div></div>
+          <div class="day-weekday">Friday</div>
+          <span class="day-pill ship">Handoff</span>
+          <h3 class="day-title">Handoff to Swaroop</h3>
+          <ul class="day-tasks">
+            <li>Walk acceptance checklist with Swaroop</li>
+            <li>Secure keystore transfer (GPG)</li>
+            <li>Deliver handoff zip</li>
+            <li>Final invoice — 30% balance, ₹18,000</li>
+          </ul>
+          <div class="day-extra"><div class="day-extra-section"><div class="day-extra-label">After today</div><div class="day-extra-text">Swaroop drives store submissions using the Welcome Pack. Spurt reachable for submission-window questions only.</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+      <div>
+        <h4>Milestones</h4>
+        <b>WK 1 · Day 5</b><br>
+        40% — ₹24,000<br><br>
+        <b>WK 3 · Day 15</b><br>
+        30% — ₹18,000<br><br>
+        <b>WK 4 · Day 20</b><br>
+        30% — ₹18,000
+      </div>
+      <div>
+        <h4>Deliverables at handoff</h4>
+        Signed Android AAB<br>
+        Encrypted keystore + passwords<br>
+        Xcode archive + .ipa<br>
+        2 training videos<br>
+        Store-listing kit<br>
+        Welcome Pack (PDF + MD)<br>
+        Going Live guide<br>
+        Full docs/ tree<br>
+        Git tag v2.0.0
+      </div>
+      <div>
+        <h4>After handoff</h4>
+        Swaroop sets up developer accounts via Welcome Pack.<br><br>
+        Apple review ≈ 24h–14d.<br><br>
+        Google Play closed test (personal accts) = 14d minimum + 1–3d production review.<br><br>
+        Realistic time-to-live: 3–6 weeks from handoff.
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    document.querySelectorAll('.day').forEach((d) => {
+      d.addEventListener('click', () => {
+        d.classList.toggle('expanded');
+      });
+    });
+  </script>
+</body>
+</html>

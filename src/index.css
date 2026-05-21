@@ -1,0 +1,256 @@
+/*@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');*/
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Great+Vibes&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@import "./styles/emoji-animations.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Camera transparency
+   ------------------------------------------------------------
+   When the native camera preview renders BEHIND the WebView
+   (toBack: true), the entire stack from <html> down has to be
+   transparent or the user sees a solid background instead of
+   the camera feed. The hook toggles this class on body via
+   document.body.classList.add('camera-active') on startPreview.
+   ============================================================ */
+/* When the native camera preview is active, the ENTIRE chain from <html>
+   down through every ancestor of <main> must be transparent or the user
+   sees only the layout's white background. Previously this rule only
+   targeted body/#root/main — but AppLayout's wrapper `<div className="...
+   bg-background ...">` sits between #root and main and stays opaque,
+   hiding the native preview. We now make every descendant of #root
+   transparent. The camera controls UI is portal'd to body (a SIBLING
+   of #root via createPortal) so its dark control chips are untouched. */
+body.camera-active,
+html:has(body.camera-active),
+body.camera-active #root,
+body.camera-active #root * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+/* Preserve solid backgrounds on the camera-controls portal itself (top
+   chips, mode pill, shutter ring) — they live directly under body. */
+body.camera-active > [role="dialog"][aria-label="Camera"] * {
+  /* This block intentionally has no `background` declaration so nothing
+     overrides Tailwind's bg-black/40 backdrop chips. The selector above
+     only zeroes backgrounds within #root, which the dialog is NOT under. */
+}
+
+
+@layer base {
+  :root {
+    /* Safe area CSS variables for Capacitor */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    /* Updated by useNativeKeyboard */
+    --keyboard-height: 0px;
+
+    /* Light Mode - White Theme */
+    --background: 0 0% 100%; /* #FFFFFF - White */
+    --foreground: 210 19% 21%; /* #1F2937 - Primary text */
+
+    --card: 50 10% 98%; /* #FAF9F6 - Off-White */
+    --card-foreground: 210 19% 21%; /* #1F2937 - Primary text */
+
+    --popover: 50 10% 98%; /* #FAF9F6 - Off-White */
+    --popover-foreground: 210 19% 21%; /* #1F2937 - Primary text */
+
+    /* --primary: 195 37% 73%; #AEC7D1 - Blue accent */
+    --primary: 173, 61%, 40%; /* #26A69A/100 - Teal*/
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+
+    --secondary: 157 42% 82%; /* #B5EAD7 - Mint Green accent */
+    --secondary-foreground: 210 19% 21%; /* #1F2937 - Primary text */
+
+    --muted: 50 10% 98%; /* #FAF9F6 - Off-White */
+    --muted-foreground: 214 14% 51%; /* #6B7280 - Secondary text */
+
+    --accent: 173, 61%, 40%; /* #26A69A/100 - Teal*/
+    --accent-foreground: 0 0% 100%; /* White text on accent */
+
+    --destructive: 0 60% 50%; /* #CC3333 - medium Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 15% 88%; /* Light border */
+    --input: 50 10% 98%; /* #FAF9F6 - Off-White for inputs */
+    --ring: 195 37% 73%; /* #AEC7D1 - Blue accent for focus rings */
+
+    --radius: 1rem; /* 16px rounded corners */
+
+    --sidebar-background: 60 100% 97%; /* #FFFFF0 - Ivory */
+    --sidebar-foreground: 214 14% 51%; /* #6B7280 - Secondary text */
+    --sidebar-primary: 195 37% 73%; /* #AEC7D1 - Blue accent */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 60 29% 88%; /* #F5F5DC - Beige */
+    --sidebar-accent-foreground: 210 19% 21%; /* #1F2937 - Primary text */
+    --sidebar-border: 200 15% 88%;
+    --sidebar-ring: 195 37% 73%; /* #AEC7D1 - Blue accent */
+  }
+
+  .dark {
+    /* Dark Mode */
+    --background: 0 0% 7%; /* #121212 - Main background */
+    --foreground: 210 6% 90%; /* #E5E7EB - Primary text */
+
+    --card: 0 0% 12%; /* #1E1E1E - Card/surface background */
+    --card-foreground: 210 6% 90%; /* #E5E7EB - Primary text */
+
+    --popover: 0 0% 12%; /* #1E1E1E - Card/surface background */
+    --popover-foreground: 210 6% 90%; /* #E5E7EB - Primary text */
+
+    /* --primary: 197 54% 76%; #A8D0E6 - Accent Blue */
+    --primary: 173, 61%, 40%; /* #26A69A/100 - Teal*/
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 165 50% 70%; /* #8BD3C7 - Accent Mint */
+    --secondary-foreground: 0 0% 7%; /* Dark text on secondary */
+
+    --muted: 0 0% 12%; /* #1E1E1E - Card/surface background */
+    --muted-foreground: 210 6% 68%; /* #9CA3AF - Secondary text */
+
+    --accent: 173, 61%, 40%; /* #26A69A/100 - Teal*/
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 60% 50%; /* #CC3333 - medium Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%; /* Dark border */
+    --input: 0 0% 12%; /* #1E1E1E - Card/surface background */
+    --ring: 197 54% 76%; /* #A8D0E6 - Accent Blue */
+
+    --radius: 1rem; /* 16px rounded corners */
+
+    --sidebar-background: 0 0% 7%; /* #121212 - Main background */
+    --sidebar-foreground: 210 6% 68%; /* #9CA3AF - Secondary text */
+    --sidebar-primary: 197 54% 76%; /* #A8D0E6 - Accent Blue */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%; /* #1E1E1E - Card/surface background */
+    --sidebar-accent-foreground: 210 6% 90%; /* #E5E7EB - Primary text */
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 197 54% 76%; /* #A8D0E6 - Accent Blue */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    /* Prevent text selection by default */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  /* Allow text selection and interaction for specific elements */
+  input,
+  textarea,
+  .select-text,
+  [contenteditable="true"],
+  input[type="file"],
+  p:not(.select-none),
+  span:not(.select-none) {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure file inputs work properly */
+  input[type="file"] {
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    -moz-user-select: auto !important;
+    -ms-user-select: auto !important;
+    pointer-events: auto !important;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    min-height: 100vh;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+    /* Support for safe areas on mobile devices */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+
+    /* Smooth scrolling performance */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior-y: none;
+  }
+}
+
+.font-greatvibes {
+  font-family: "Great Vibes", cursive;
+}
+
+.content-container {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize scrolling performance */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth transitions for interactive elements */
+button,
+a,
+[role="button"] {
+  -webkit-touch-callout: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.post-image {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.profile-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.media-container {
+  @apply aspect-square rounded-xl overflow-hidden relative mb-2;
+}
+
+.gradient-overlay {
+  background-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+
+/* ============= Mobile safe-area & keyboard utilities ============= */
+@layer utilities {
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pl-safe { padding-left: env(safe-area-inset-left, 0px); }
+  .pr-safe { padding-right: env(safe-area-inset-right, 0px); }
+  .px-safe { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .py-safe { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pb-keyboard { padding-bottom: var(--keyboard-height, 0px); }
+  .mb-keyboard { margin-bottom: var(--keyboard-height, 0px); }
+  .min-h-dvh { min-height: 100dvh; }
+  .h-dvh { height: 100dvh; }
+}

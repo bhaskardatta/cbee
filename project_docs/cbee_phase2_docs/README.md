@@ -1,0 +1,100 @@
+# cbee Phase 2 — Handoff Package
+
+**Generated for Spurt Studios on Day 0 of the sprint.** This zip contains everything Bhaskar needs to build cbee Phase 2 in 4 weeks, everything Swaroop needs to take it live after handoff, and everything any future developer needs to pick up where we left off.
+
+---
+
+## Three doors in, depending on who you are and what you need
+
+### 🛠️ "I'm Bhaskar / the dev. Just give me the working files."
+
+Start at `docs/00_OVERVIEW.md` for the system map, then `docs/01_REPO_MAP.md` for a file-by-file tour. Then open the specific `docs/features/*.md` for whatever you're building today.
+
+For a 10-minute skim: `cbee_phase2_brief.pdf`.
+For the 4-week plan: `sprint_plan.html` (open in any browser).
+
+### 📋 "I'm Swaroop. What do I do with all this?"
+
+Start at `welcome_pack/cbee_welcome_pack.pdf`. It's the friendly version. It walks you through setting up your Apple Developer and Google Play Console accounts, has linked tutorials, and tells you what you need to do (and not do) to get cbee live on the stores.
+
+Then, when accounts are active, open `docs/handoff/going_live.md`.
+
+### 🧠 "I'm a future developer. What is this project?"
+
+Start at `docs/00_OVERVIEW.md`. It explains cbee top-to-bottom in 5 minutes. Then `docs/01_REPO_MAP.md` for the file-by-file tour, then whatever feature spec you need next.
+
+---
+
+## File map
+
+```
+cbee_phase2_docs/
+│
+├── README.md                          ← you are here
+│
+├── cbee_phase2_brief.pdf              ← 6-page executive summary, read in bed
+├── sprint_plan.html                   ← Interactive 4-week sprint timeline
+│
+├── docs/
+│   ├── 00_OVERVIEW.md                 ← System architecture, one screen
+│   ├── 01_REPO_MAP.md                 ← Every file, what it does
+│   ├── 02_DATA_MODEL.md               ← Schema + the critical Phase 2 migration
+│   ├── 03_DECISIONS.md                ← 17 ADRs with rejected alternatives
+│   ├── 04_GOTCHAS.md                  ← 25 numbered quirks you WILL hit
+│   ├── 05_CAPACITOR_8_NOTES.md        ← Day-1 Cap 7→8 upgrade walkthrough
+│   │
+│   ├── features/
+│   │   ├── camera.md                  ← In-app camera with @capgo plugin
+│   │   ├── reels.md                   ← Vertical-swipe video feed
+│   │   ├── media_storage.md           ← R2 + edge function architecture
+│   │   ├── upload_flow.md             ← Refactored upload page
+│   │   ├── bottom_nav.md              ← 5 tabs + camera FAB
+│   │   └── moderation_mvp.md          ← Report button + admin SQL
+│   │
+│   ├── build/
+│   │   ├── dev_environment.md         ← Node 22, JDK 17, Android Studio, Xcode
+│   │   ├── ios_setup.md               ← Bundle ID rename + cap add ios
+│   │   └── android_signing.md         ← Keystore + signed AAB
+│   │
+│   ├── operations/
+│   │   └── cost_model.md              ← What cbee costs at every scale (R2 + Supabase)
+│   │
+│   ├── testing/
+│   │   ├── acceptance_criteria.md     ← Definition of done
+│   │   └── device_matrix.md           ← What to test on what
+│   │
+│   └── handoff/
+│       ├── going_live.md              ← Submission walkthrough (Swaroop-facing)
+│       └── keystore_handoff.md        ← GPG-encrypted keystore transfer
+│
+└── welcome_pack/
+    ├── WELCOME.md                     ← Main welcome doc for Swaroop
+    ├── apple_developer_setup.md       ← Apple Developer enrollment (India app-only)
+    ├── google_play_setup.md           ← Google Play + the 14-day closed test
+    ├── cloudflare_setup.md            ← Cloudflare R2 setup (~30 min)
+    └── cbee_welcome_pack.pdf          ← Polished PDF version of the above 4
+```
+
+---
+
+## The fast facts
+
+| Fact                  | Value                                                              |
+| --------------------- | ------------------------------------------------------------------ |
+| Engagement            | ₹60,000 fixed · 4 weeks · 40 / 30 / 30 milestones                  |
+| Lead developer        | Bhaskar Datta P — Spurt Studios, Bangalore                         |
+| Client                | Swaroop B S — cbee                                                 |
+| What ships            | Native camera + Reels feed + iOS build + Report MVP                |
+| What doesn't ship     | Store submission · ML ranking · Stories · Live · filters · editing |
+| Target devices        | iPhone 13+ · Pixel 7 · Samsung A55 · Redmi 12                      |
+| Realistic go-live     | 3-6 weeks AFTER handoff (Apple review + Google 14-day closed test) |
+
+---
+
+## When you're stuck
+
+The single best move when stuck is to check `docs/04_GOTCHAS.md` first — there are 25 numbered quirks, most of which we ran into during the audit, and the file grows as the sprint progresses. After that, the relevant `docs/features/*.md` has edge-case sections. Last resort: ping Bhaskar.
+
+---
+
+Generated by Spurt Studios. May 2026.

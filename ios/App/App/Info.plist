@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+        <string>cbee</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+
+	<!-- Phase 2: Camera + microphone usage strings.
+	     Apple rejects on review if the app invokes the corresponding APIs
+	     without these declarations. -->
+	<key>NSCameraUsageDescription</key>
+	<string>cbee uses your camera to capture photos and short videos of your pets.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>cbee records audio when you film a video so your pet's voice comes through.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>cbee accesses your photo library so you can share existing photos and videos of your pets.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>cbee saves photos and videos you capture so you can revisit them later.</string>
+
+	<!-- OAuth deep link callbacks (app.cbee.online://callback). The short
+	     `cbee` scheme is the internal app shorthand; `app.cbee.online` matches
+	     the bundle ID for Supabase OAuth redirect. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.cbee.online</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cbee</string>
+				<string>app.cbee.online</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
