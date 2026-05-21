@@ -1,5 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
+import { CameraPreview } from "@capgo/camera-preview";
 import AppHeader from "@/components/AppHeader";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,11 @@ import { useCreatePost } from "@/hooks/usePosts";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { toast } from "@/components/ui/sonner";
 import NativeCameraSheet from "@/components/camera/NativeCameraSheet";
-import type { CameraCaptureResult } from "@/hooks/useNativeCamera";
+import {
+  consumePendingCapture,
+  clearPendingCapture,
+  type CameraCaptureResult,
+} from "@/hooks/useNativeCamera";
 import {
   getVideoMetadata,
   getImageMetadata,
@@ -47,6 +53,34 @@ const UploadPage = () => {
   const [cameraOpen, setCameraOpen] = useState(false);
 
   const isBusy = isUploading || isCreating;
+
+  // Rehydrate from a pending camera capture if the WebView was reloaded
+  // between capture-success and the React state update (Samsung S22 + heavy
+  // memory pressure reproduces this). consumePendingCapture clears the
+  // stored entry, so it only fires once per app lifetime.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const pending = await consumePendingCapture();
+        if (cancelled || !pending) return;
+        setSelectedFile(pending.file);
+        setPreview(URL.createObjectURL(pending.file));
+        setMeta({
+          mediaKind: pending.kind === "photo" ? "image" : "video",
+          aspectRatio: pending.aspectRatio,
+          durationSeconds:
+            pending.kind === "video" ? pending.durationSeconds : undefined,
+        });
+        toast("Restored your last capture — tap Share to post.");
+      } catch (e) {
+        console.warn("[UploadPage] consumePendingCapture failed:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* ------------------------------------------------------------------ */
   /*  Gallery import (existing flow + 60s video cap + meta probe)        */
@@ -136,6 +170,49 @@ const UploadPage = () => {
     fileInputRef.current?.click();
   };
 
+  /**
+   * Pre-request camera + mic permissions BEFORE mounting the camera sheet.
+   *
+   * Why: on Samsung Android, the first-time runtime permission dialog
+   * causes the activity to enter onPause → onResume, which makes the
+   * Capacitor WebView's React tree re-mount. If we request permissions
+   * inside the camera sheet's useEffect, the re-mount fires the cleanup
+   * (`stopPreview`) while the new mount is calling `startPreview`,
+   * leaving the native camera in an inconsistent state ("camera running"
+   * but no surface drawing). Resolving permission BEFORE the sheet opens
+   * means the second open never sees an OS dialog, so the activity stays
+   * resumed and the lifecycle is clean.
+   */
+  const openCameraSheet = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      setCameraOpen(true);
+      return;
+    }
+    try {
+      const status = await CameraPreview.checkPermissions();
+      const needsAsk =
+        status?.camera !== "granted" || status?.microphone !== "granted";
+      if (needsAsk) {
+        const res = await CameraPreview.requestPermissions({
+          disableAudio: false,
+          showSettingsAlert: true,
+        });
+        if (res?.camera !== "granted") {
+          toast(
+            "Camera permission is needed to take photos and videos. Enable it in Settings.",
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn(
+        "[UploadPage] pre-permission check failed; opening sheet anyway",
+        e,
+      );
+    }
+    setCameraOpen(true);
+  };
+
   const clearSelection = () => {
     setSelectedFile(null);
     setMeta(null);
@@ -200,6 +277,8 @@ const UploadPage = () => {
       onSuccess: () => {
         toast("Post created successfully!");
         if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+        // Drop the stored capture path — the file now lives in posts.media_url.
+        void clearPendingCapture();
         navigate("/");
       },
       onError: (error) => {
@@ -251,7 +330,7 @@ const UploadPage = () => {
                     <Button type="button" variant="outline" onClick={triggerFileSelect} disabled={isBusy}>
                       Gallery
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setCameraOpen(true)} disabled={isBusy}>
+                    <Button type="button" variant="outline" onClick={openCameraSheet} disabled={isBusy}>
                       <Camera className="w-4 h-4 mr-1" /> Re-shoot
                     </Button>
                     <Button type="button" variant="outline" onClick={clearSelection} disabled={isBusy}>
@@ -279,7 +358,7 @@ const UploadPage = () => {
                     <Button
                       type="button"
                       className="bg-[#26A69A] text-white hover:bg-[#26A69A]/90"
-                      onClick={() => setCameraOpen(true)}
+                      onClick={openCameraSheet}
                     >
                       <Camera className="w-4 h-4 mr-2" />
                       Take Photo or Video

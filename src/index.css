@@ -15,27 +15,26 @@
    the camera feed. The hook toggles this class on body via
    document.body.classList.add('camera-active') on startPreview.
    ============================================================ */
-/* When the native camera preview is active, the ENTIRE chain from <html>
-   down through every ancestor of <main> must be transparent or the user
-   sees only the layout's white background. Previously this rule only
-   targeted body/#root/main — but AppLayout's wrapper `<div className="...
-   bg-background ...">` sits between #root and main and stays opaque,
-   hiding the native preview. We now make every descendant of #root
-   transparent. The camera controls UI is portal'd to body (a SIBLING
-   of #root via createPortal) so its dark control chips are untouched. */
+/* When the native camera preview is active:
+   1. html/body must be background-transparent so the WebView paints with
+      alpha=0 in the areas the camera sheet doesn't cover. The native
+      preview behind shines through.
+   2. #root must be COMPLETELY HIDDEN so the underlying React tree (home
+      page, upload page, navbar) doesn't bleed through. We use
+      visibility:hidden because display:none would re-mount the tree on
+      close and lose scroll/state.
+   3. The camera-controls sheet is portal'd to <body> via createPortal,
+      so it sits as a SIBLING of #root in the DOM. visibility:hidden on
+      #root does NOT affect the portal's visibility. */
 body.camera-active,
-html:has(body.camera-active),
-body.camera-active #root,
-body.camera-active #root * {
+html:has(body.camera-active) {
   background: transparent !important;
   background-color: transparent !important;
 }
-/* Preserve solid backgrounds on the camera-controls portal itself (top
-   chips, mode pill, shutter ring) — they live directly under body. */
-body.camera-active > [role="dialog"][aria-label="Camera"] * {
-  /* This block intentionally has no `background` declaration so nothing
-     overrides Tailwind's bg-black/40 backdrop chips. The selector above
-     only zeroes backgrounds within #root, which the dialog is NOT under. */
+body.camera-active #root {
+  visibility: hidden !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 

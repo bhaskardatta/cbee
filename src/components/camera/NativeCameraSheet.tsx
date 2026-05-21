@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Camera as CameraIcon,
-  FlashlightOff,
   Zap,
   ZapOff,
   RotateCcw,
@@ -90,16 +89,33 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
     })();
   }, []);
 
-  // Open / close lifecycle
+  // Open / close lifecycle.
+  //
+  // Uses a ref for the cancellation flag so it survives across React's
+  // double-render in StrictMode AND across the activity-resume re-mount
+  // some Android permission flows can cause.
+  //
+  // Permission is expected to be pre-granted by the caller (UploadPage's
+  // openCameraSheet does the request BEFORE flipping `open` to true).
+  // We re-check defensively but never trigger the OS dialog from inside
+  // the effect, because that dialog is what causes the activity lifecycle
+  // to recreate the WebView and crash the camera start.
+  const cancelledRef = useRef(false);
+
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
+    cancelledRef.current = false;
 
     (async () => {
-      teardownActiveVideos();
+      try {
+        teardownActiveVideos();
+      } catch (e) {
+        console.warn("[NativeCameraSheet] teardownActiveVideos threw:", e);
+      }
 
+      // Quick non-prompting permission check (won't trigger OS dialog).
       const perm = await camera.requestPermissions();
-      if (cancelled) return;
+      if (cancelledRef.current) return;
       if (!perm.camera) {
         toast({
           title: "Camera access needed",
@@ -112,11 +128,15 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
 
       try {
         await camera.startPreview({ position: "rear" });
-        if (cancelled) {
+        if (cancelledRef.current) {
           await camera.stopPreview();
           return;
         }
-        await camera.setFlashMode(flash);
+        try {
+          await camera.setFlashMode(flash);
+        } catch (e) {
+          console.warn("[NativeCameraSheet] setFlashMode failed (non-fatal):", e);
+        }
         setPreviewReady(true);
       } catch (e) {
         console.error("[NativeCameraSheet] startPreview failed:", e);
@@ -130,8 +150,12 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
     })();
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       setPreviewReady(false);
+      // Always run stopPreview — even if startPreview was still in flight,
+      // useNativeCamera.stopPreview is idempotent (B3) and ALWAYS clears
+      // the body.camera-active class. Without that, the React tree stays
+      // visibility:hidden and the user is locked out of the app.
       camera.stopPreview().catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,7 +195,22 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
 
   const handlePhoto = useCallback(async () => {
     try {
-      const res = await camera.capturePhoto();
+      // Belt-and-braces: re-apply the flash mode right before capture.
+      // On Samsung's OEM CameraX (and some Pixel variants), the flash mode
+      // set during preview-start can get reset by lifecycle events; setting
+      // it again immediately before capture ensures the LED actually fires.
+      try {
+        await camera.setFlashMode(flash);
+      } catch (e) {
+        console.warn("[NativeCameraSheet] re-apply flash failed:", e);
+      }
+
+      // Map the grid overlay choice to a target aspect ratio for the crop.
+      // "off" and "thirds" don't change the framing — capture native sensor
+      // aspect; "1:1" / "4:5" / "9:16" trigger a centered Canvas crop.
+      const targetAspect =
+        grid === "1:1" || grid === "4:5" || grid === "9:16" ? grid : undefined;
+      const res = await camera.capturePhoto({ aspectRatio: targetAspect });
       onCapture(res);
     } catch (e) {
       toast({
@@ -180,7 +219,7 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
         variant: "destructive",
       });
     }
-  }, [camera, onCapture]);
+  }, [camera, onCapture, grid, flash]);
 
   const handleVideoStart = useCallback(async () => {
     try {
@@ -199,6 +238,23 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
       const res = await camera.stopVideo();
       onCapture(res);
     } catch (e) {
+      // Recording-state desync (plugin thinks one thing, OS thinks another)
+      // produces messages like "Video recording failed: 8" or "No video
+      // recording in progress". These happen when the OS killed our session
+      // or when stop is called against a session that already ended. We
+      // swallow these silently — there's no captured file to deliver, and
+      // the user already knows something's wrong because the recording ring
+      // disappeared. A red toast here just confuses them.
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn("[NativeCameraSheet] stopVideo failed:", msg);
+      if (
+        /Video recording failed:?\s*\d+/i.test(msg) ||
+        /no video recording/i.test(msg) ||
+        /not recording/i.test(msg) ||
+        /recording.*progress/i.test(msg)
+      ) {
+        return;
+      }
       toast({
         title: "Recording failed",
         description: e instanceof Error ? e.message : "Please try again.",
@@ -277,7 +333,13 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
 
   // We portal into <body> rather than rendering inline so the WebView
   // transparency rule (body.camera-active) can cleanly override every parent.
-  const FlashIcon = flash === "off" ? ZapOff : flash === "on" ? Zap : FlashlightOff;
+  //
+  // Flash icon — "off" is the slashed bolt, "auto" / "on" are both the bolt
+  // but we badge the auto variant with a small "A" so users can tell them
+  // apart at a glance. Color: yellow for "on" so it pops, white otherwise.
+  const FlashIcon = flash === "off" ? ZapOff : Zap;
+  const flashColor = flash === "on" ? "text-yellow-300" : "text-white";
+  const flashLabel = flash === "off" ? "Off" : flash === "on" ? "On" : "Auto";
 
   return createPortal(
     <div
@@ -309,9 +371,9 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
         />
       )}
 
-      {/* Top controls bar */}
+      {/* Top controls bar — matching gradient backdrop. */}
       <div
-        className="relative z-10 flex items-center justify-between px-4"
+        className="relative z-10 flex items-center justify-between px-4 pb-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent"
         style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
       >
         <button
@@ -336,10 +398,15 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
           <button
             type="button"
             onClick={cycleFlash}
-            aria-label={`Flash ${flash}`}
-            className="grid place-items-center w-10 h-10 rounded-full bg-black/40 backdrop-blur text-white"
+            aria-label={`Flash ${flashLabel}`}
+            className={`relative grid place-items-center w-10 h-10 rounded-full bg-black/40 backdrop-blur ${flashColor} active:scale-95 transition-transform`}
           >
             <FlashIcon size={20} />
+            {flash === "auto" && (
+              <span className="absolute -top-1 -right-1 grid place-items-center w-4 h-4 rounded-full bg-yellow-300 text-[9px] font-bold text-black leading-none">
+                A
+              </span>
+            )}
           </button>
           <button
             type="button"
@@ -355,9 +422,12 @@ export default function NativeCameraSheet({ open, onClose, onCapture }: NativeCa
       {/* Spacer pushes the bottom controls to safe-area bottom */}
       <div className="flex-1" />
 
-      {/* Bottom controls */}
+      {/* Bottom controls. The black gradient backdrop hides the compositor
+         seam between the camera surface and the bottom of the screen, AND
+         masks the AppNavbar / gesture-bar area which can briefly flicker
+         visible during the open / close transition on Android. */}
       <div
-        className="relative z-10 flex flex-col items-center gap-4"
+        className="relative z-10 flex flex-col items-center gap-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-12"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1.5rem)" }}
       >
         {/* Photo / Video mode pill */}

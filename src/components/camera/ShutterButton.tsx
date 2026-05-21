@@ -21,10 +21,17 @@ const DEFAULT_MAX_VIDEO_MS = 60_000;
 const DEFAULT_SIZE = 84;
 
 /**
- * Camera shutter button.
+ * Camera shutter button — Instagram-style tap interactions.
  *
  *  Photo mode: tap → onPhotoCapture()
- *  Video mode: press-and-hold → onVideoStart(); release or hit maxVideoMs → onVideoStop()
+ *  Video mode: tap to START recording; tap again to STOP. The hard ceiling
+ *  at `maxVideoMs` auto-stops the recording.
+ *
+ * Why not press-and-hold for video any more: on Samsung gesture navigation,
+ * holding the shutter sometimes never delivers a `pointerup` event because
+ * Samsung's edge-swipe handler intercepts it. The user would start recording
+ * and then have no way to stop it (the exact bug reported). Tap-to-toggle
+ * is bulletproof.
  *
  * Recording UI is an animated SVG progress ring drawn with Framer Motion,
  * filling from 0 → 360° over `maxVideoMs`. Haptic feedback fires on every
@@ -44,18 +51,21 @@ export default function ShutterButton({
   // Track an in-flight tap so duplicate pointer events don't double-fire.
   const inFlightRef = useRef(false);
   const autoStopTimerRef = useRef<number | undefined>(undefined);
-  // Local "progress armed" flag — set when recording starts so the ring
-  // animation only mounts during a real recording, not on stale prop flips.
   const [recordingArmed, setRecordingArmed] = useState(false);
 
   useEffect(() => {
     setRecordingArmed(isRecording);
+  }, [isRecording]);
+
+  // Clear the auto-stop timer on unmount so it doesn't fire on a stale sheet.
+  useEffect(() => {
     return () => {
       if (autoStopTimerRef.current !== undefined) {
         window.clearTimeout(autoStopTimerRef.current);
+        autoStopTimerRef.current = undefined;
       }
     };
-  }, [isRecording]);
+  }, []);
 
   const haptic = async (style: ImpactStyle) => {
     try {
@@ -65,57 +75,75 @@ export default function ShutterButton({
     }
   };
 
-  const handlePointerDown = async (e: React.PointerEvent<HTMLButtonElement>) => {
+  // Run the actual capture/start/stop action. Called from both onPointerUp
+  // (the reliable path on Android WebView) AND onClick (fallback for when
+  // pointer events get swallowed by Samsung's gesture-nav). Re-entry guarded
+  // by `inFlightRef` so we never double-fire.
+  const runAction = async () => {
     if (disabled || inFlightRef.current) return;
-    // Mouse: only respond to left click
-    if (e.pointerType === "mouse" && e.button !== 0) return;
     inFlightRef.current = true;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
 
-    if (mode === "photo") {
-      try {
+    console.log("[ShutterButton] action fired, mode=", mode, "armed=", recordingArmed);
+    try {
+      if (mode === "photo") {
         haptic(ImpactStyle.Medium);
         await onPhotoCapture();
-      } finally {
-        inFlightRef.current = false;
+        return;
       }
-      return;
-    }
 
-    // Video mode: start recording
-    try {
-      haptic(ImpactStyle.Heavy);
-      await onVideoStart();
-      // Hard ceiling — defensive auto-stop even if the parent forgets.
-      autoStopTimerRef.current = window.setTimeout(async () => {
-        if (inFlightRef.current) {
-          haptic(ImpactStyle.Light);
-          try {
-            await onVideoStop();
-          } finally {
-            inFlightRef.current = false;
-          }
+      // Video mode: toggle start ↔ stop.
+      if (recordingArmed) {
+        // Stop the recording.
+        if (autoStopTimerRef.current !== undefined) {
+          window.clearTimeout(autoStopTimerRef.current);
+          autoStopTimerRef.current = undefined;
         }
-      }, maxVideoMs + 200);
-    } catch {
+        haptic(ImpactStyle.Light);
+        await onVideoStop();
+      } else {
+        // Start the recording.
+        haptic(ImpactStyle.Heavy);
+        await onVideoStart();
+        // Hard ceiling — defensive auto-stop even if the parent forgets.
+        if (autoStopTimerRef.current !== undefined) {
+          window.clearTimeout(autoStopTimerRef.current);
+        }
+        autoStopTimerRef.current = window.setTimeout(async () => {
+          autoStopTimerRef.current = undefined;
+          try {
+            haptic(ImpactStyle.Light);
+            await onVideoStop();
+          } catch (err) {
+            console.warn("[ShutterButton] auto-stop failed", err);
+          }
+        }, maxVideoMs + 200);
+      }
+    } catch (err) {
+      console.error("[ShutterButton] action failed", err);
+    } finally {
       inFlightRef.current = false;
     }
   };
 
-  const handlePointerUp = async (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (mode !== "video" || !inFlightRef.current) return;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  // Stamp the latest pointer-fired time so onClick can ignore the synthetic
+  // click that fires ~50–300 ms after pointerup on Android.
+  const lastPointerUpRef = useRef(0);
 
-    if (autoStopTimerRef.current !== undefined) {
-      window.clearTimeout(autoStopTimerRef.current);
-      autoStopTimerRef.current = undefined;
-    }
-    try {
-      haptic(ImpactStyle.Light);
-      await onVideoStop();
-    } finally {
-      inFlightRef.current = false;
-    }
+  const handlePointerUp = async (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    // Only fire on the primary touch / left mouse.
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    lastPointerUpRef.current = Date.now();
+    await runAction();
+  };
+
+  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+    // Ignore synthetic click that fires shortly after our pointerup handler
+    // already ran. Prevents the action from firing twice per tap.
+    if (Date.now() - lastPointerUpRef.current < 500) return;
+    e.preventDefault();
+    await runAction();
   };
 
   const stroke = 4;
@@ -125,13 +153,21 @@ export default function ShutterButton({
   return (
     <button
       type="button"
-      aria-label={mode === "photo" ? "Take photo" : recordingArmed ? "Stop recording" : "Start recording"}
+      aria-label={
+        mode === "photo"
+          ? "Take photo"
+          : recordingArmed
+            ? "Stop recording"
+            : "Start recording"
+      }
       disabled={disabled}
-      onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onClick={handleClick}
       onContextMenu={(e) => e.preventDefault()}
-      className="relative flex items-center justify-center bg-transparent border-0 select-none touch-none disabled:opacity-50"
+      // touch-manipulation (NOT touch-none) — keeps the browser's click
+      // synthesis working while disabling double-tap zoom. `touch-none`
+      // breaks click delivery on Samsung WebView.
+      className="relative flex items-center justify-center bg-transparent border-0 select-none touch-manipulation disabled:opacity-50 cursor-pointer"
       style={{ width: size, height: size }}
     >
       {/* Outer white ring */}
@@ -166,17 +202,12 @@ export default function ShutterButton({
         </svg>
       )}
 
-      {/* Inner dot — white solid in photo, red rounded-square in recording, red dot in video idle */}
+      {/* Inner dot — white solid in photo, red rounded-square while recording */}
       <motion.span
         aria-hidden
         layout
         animate={{
-          backgroundColor:
-            mode === "video"
-              ? recordingArmed
-                ? "#EF4444"
-                : "#EF4444"
-              : "#FFFFFF",
+          backgroundColor: mode === "video" ? "#EF4444" : "#FFFFFF",
           borderRadius: recordingArmed ? 6 : 999,
           scale: recordingArmed ? 0.55 : 0.75,
         }}

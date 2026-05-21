@@ -198,6 +198,98 @@ export function getImageMetadata(file: File): Promise<{
   });
 }
 
+/** Map our canonical aspect labels to numeric ratios. */
+const ASPECT_TO_RATIO: Record<AspectRatio, number> = {
+  "1:1": 1,
+  "4:5": 4 / 5,
+  "9:16": 9 / 16,
+  "16:9": 16 / 9,
+};
+
+/**
+ * Center-crop an image File to the target aspect ratio. Returns a fresh
+ * JPEG File. If the source is already at the target aspect (within 1%),
+ * returns the original to avoid a pointless re-encode.
+ *
+ * Why we do this at all: the native camera plugin always captures at the
+ * sensor's full resolution (so on the Samsung S22 every photo is 9:16
+ * regardless of which aspect-ratio the user selected in the grid overlay).
+ * The grid overlay shows the user the CROP they're framing for; this is
+ * where we actually apply that crop.
+ *
+ * Quality 0.92 — visually lossless at feed sizes, matches native camera output.
+ */
+export function cropImageToAspect(
+  file: File,
+  target: AspectRatio,
+): Promise<File> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    const fail = (reason: string) => {
+      console.warn("[cropImageToAspect] cannot crop, returning original:", reason);
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+
+    img.onload = () => {
+      const sw = img.naturalWidth;
+      const sh = img.naturalHeight;
+      if (!sw || !sh) return fail("zero dimensions");
+
+      const targetRatio = ASPECT_TO_RATIO[target];
+      const sourceRatio = sw / sh;
+      // Already at target? Skip re-encoding (saves CPU + preserves quality).
+      if (Math.abs(sourceRatio / targetRatio - 1) < 0.01) {
+        URL.revokeObjectURL(url);
+        resolve(file);
+        return;
+      }
+
+      // Compute the largest rect with target ratio that fits inside (sw, sh).
+      let cw: number;
+      let ch: number;
+      if (sourceRatio > targetRatio) {
+        // Source wider than target → height-bound the crop
+        ch = sh;
+        cw = ch * targetRatio;
+      } else {
+        // Source narrower than target → width-bound the crop
+        cw = sw;
+        ch = cw / targetRatio;
+      }
+      const cx = (sw - cw) / 2;
+      const cy = (sh - ch) / 2;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(cw);
+      canvas.height = Math.round(ch);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return fail("no 2d context");
+      ctx.drawImage(img, cx, cy, cw, ch, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) return resolve(file);
+          // Preserve the original file's name stem; force .jpg ext since we
+          // always encode as JPEG (the camera path passes image/jpeg files).
+          const baseName = file.name.replace(/\.[^/.]+$/, "");
+          resolve(new File([blob], `${baseName}.jpg`, { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.92,
+      );
+    };
+
+    img.onerror = () => fail("image load error");
+    // Safety net — if the decode hangs, return the original after 6 s.
+    window.setTimeout(() => fail("6s timeout"), 6000);
+    img.src = url;
+  });
+}
+
 /**
  * Extract a JPEG thumbnail from a video at t = min(0.5s, duration/2).
  * Returns a File ready to upload via `useMediaUpload(thumb, "thumbnail")`.
